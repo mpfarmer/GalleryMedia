@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Skype</string>
+    <string name="tvPhotos">Photos</string>
+    <string name="tvPhotoCount">0 selected</string>
+    <string name="tvPhotoSelected">0 of </string>
+
+    <string name="tvVideos">Videos</string>
+    <string name="tvVideoCount">0 selected</string>
+    <string name="tvVideoSelected">0 of </string>
+
+</resources>
