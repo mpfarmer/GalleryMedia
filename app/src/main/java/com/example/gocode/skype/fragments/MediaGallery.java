@@ -2,14 +2,12 @@ package com.example.gocode.skype.fragments;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.TransitionDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -27,6 +25,8 @@ import android.widget.TextView;
 
 import com.example.gocode.skype.R;
 import com.example.gocode.skype.models.DataModel;
+import com.example.gocode.skype.tasks.FetchPhotoTask;
+import com.example.gocode.skype.tasks.FetchVideoTask;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ import java.util.ArrayList;
 /**
  * Created by Go Code on 9/11/2016.
  */
-public class MediaGallery extends Fragment {
+public class MediaGallery extends Fragment implements FetchVideoTask.OnTaskCompleted, FetchPhotoTask.OnTaskCompleted{
 
     public static final String TAG = "MediaGallery";
     private static final int PERMISSION_REQUEST_READ_EXTERNAL_STORAGE = 321;
@@ -51,6 +51,10 @@ public class MediaGallery extends Fragment {
 
     private ArrayList<DataModel> photoList;
     private ArrayList<DataModel> videoList;
+
+    private FetchPhotoTask fetchPhotoTask;
+    private FetchVideoTask fetchVideoTask;
+
     private RecyclerView photoRecyclerView;
     private PhotoAdapter photoAdapter;
     private RecyclerView.LayoutManager photoLayoutManager;
@@ -91,8 +95,10 @@ public class MediaGallery extends Fragment {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.d(TAG, "onRequestPermissionResult: grant results");
-                    new FetchPhotoTask().execute();
-                    new FetchVideoTask().execute();
+                    fetchPhotoTask = new FetchPhotoTask(this);
+                    fetchPhotoTask.execute();
+                    fetchVideoTask = new FetchVideoTask(this);
+                    fetchVideoTask.execute();
                 }
                 break;
         }
@@ -122,75 +128,23 @@ public class MediaGallery extends Fragment {
         return null;
     }
 
-    private class FetchPhotoTask extends AsyncTask<Object, Void, ArrayList<DataModel>> {
-
-        @Override
-        protected ArrayList<DataModel> doInBackground(Object... params) {
-            Log.d(TAG, "doInBackground()");
-            String[] columns = {MediaStore.Images.Thumbnails.DATA, MediaStore.Images.Thumbnails.IMAGE_ID};
-            Cursor cursor = getActivity().getContentResolver().query(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI,
-                    columns, // Which columns to return
-                    null,       // Return all rows
-                    null,
-                    null);
-            int columnPathIndex = cursor.getColumnIndex(MediaStore.Images.Thumbnails.DATA);
-            int columnIdIndex = cursor.getColumnIndex(MediaStore.Images.Thumbnails.IMAGE_ID);
-            ArrayList<DataModel> photoPaths = new ArrayList<>();
-            for (int i = 0; i < cursor.getCount(); i++) {
-                cursor.moveToPosition(i);
-                photoPaths.add(new DataModel(cursor.getString(columnPathIndex), false, cursor.getString(columnIdIndex)));
-            }
-            cursor.close();
-            return photoPaths;
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<DataModel> dataSet) {
-            super.onPostExecute(dataSet);
-            if (dataSet != null) {
-                if (photoList != null) {
-                    photoList.clear();
-                }
-                photoList.addAll(dataSet);
-                photoAdapter.notifyDataSetChanged();
-                tvPhotoCount.setText(dataSet.size() + " selected");
-            }
+    @Override
+    public void onFetchVideoCompleted(ArrayList<DataModel> videos) {
+        if (videos != null) {
+            videoList.clear();
+            videoList.addAll(videos);
+            videoAdapter.notifyDataSetChanged();
+            tvVideoCount.setText(videos.size() + " selected");
         }
     }
 
-    private class FetchVideoTask extends AsyncTask<Object, Void, ArrayList<DataModel>> {
-
-        @Override
-        protected ArrayList<DataModel> doInBackground(Object... params) {
-            Log.d(TAG, "doInBackground()");
-            String[] columns = {MediaStore.Video.Thumbnails.DATA, MediaStore.Video.Thumbnails.VIDEO_ID};
-            Cursor cursor = getActivity().getContentResolver().query(MediaStore.Video.Thumbnails.EXTERNAL_CONTENT_URI,
-                    columns, // Which columns to return
-                    null,       // Return all rows
-                    null,
-                    null);
-            int columnPathIndex = cursor.getColumnIndex(MediaStore.Video.Thumbnails.DATA);
-            int columnIdIndex = cursor.getColumnIndex(MediaStore.Video.Thumbnails.VIDEO_ID);
-            ArrayList<DataModel> videoPaths = new ArrayList<>();
-            for (int i = 0; i < cursor.getCount(); i++) {
-                cursor.moveToPosition(i);
-                videoPaths.add(new DataModel(cursor.getString(columnPathIndex), false, cursor.getString(columnIdIndex)));
-            }
-            cursor.close();
-            return videoPaths;
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<DataModel> dataSet) {
-            super.onPostExecute(dataSet);
-            if (dataSet != null) {
-                if (videoList != null) {
-                    videoList.clear();
-                }
-                videoList.addAll(dataSet);
-                videoAdapter.notifyDataSetChanged();
-                tvVideoCount.setText(dataSet.size() + " selected");
-            }
+    @Override
+    public void onFetchPhotoCompleted(ArrayList<DataModel> photos) {
+        if (photos != null) {
+            photoList.clear();
+            photoList.addAll(photos);
+            photoAdapter.notifyDataSetChanged();
+            tvPhotoCount.setText(photos.size() + " selected");
         }
     }
 
@@ -198,8 +152,19 @@ public class MediaGallery extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, MediaGallery.class.getName() + "OnCreate()");
+        setRetainInstance(true);
         photoList = new ArrayList<>();
-        videoList = new ArrayList<>();
+        this.videoList = new ArrayList<>();
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (!isPermissionGranted()) {
+                askForPermission();
+            } else {
+                fetchPhotoTask = new FetchPhotoTask(this);
+                fetchPhotoTask.execute();
+                fetchVideoTask = new FetchVideoTask(this);
+                fetchVideoTask.execute();
+            }
+        }
     }
 
     @Nullable
@@ -207,14 +172,7 @@ public class MediaGallery extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         Log.d(TAG, MediaGallery.class.getName() + "OnCreateView()");
         ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.gallery_media, container, false);
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (!isPermissionGranted()) {
-                askForPermission();
-            } else {
-                new FetchPhotoTask().execute();
-                new FetchVideoTask().execute();
-            }
-        }
+
         tvPhotoCount = (TextView) rootView.findViewById(R.id.photoCount);
         tvPhotoSelected = (TextView) rootView.findViewById(R.id.photoSelectedCount);
         tvVideoCount = (TextView) rootView.findViewById(R.id.videoCount);
@@ -319,6 +277,7 @@ public class MediaGallery extends Fragment {
             }
         }
 
+
         @Override
         public int getItemCount() {
             return photoList == null ? 0 : photoList.size();
@@ -334,7 +293,6 @@ public class MediaGallery extends Fragment {
             return imageBitmap;
         }
     }
-
 
     private class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> {
         private static final String TAG = "VideoAdapter";
@@ -409,6 +367,15 @@ public class MediaGallery extends Fragment {
             }
             return imageBitmap;
         }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        if(fetchVideoTask != null && fetchVideoTask.getStatus() == AsyncTask.Status.RUNNING)
+            fetchVideoTask.cancel(true);
+        videoAdapter = null;
     }
 
     @Override
