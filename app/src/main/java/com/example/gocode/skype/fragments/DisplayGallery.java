@@ -1,7 +1,5 @@
 package com.example.gocode.skype.fragments;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -11,13 +9,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
-import com.example.gocode.skype.activities.PreScreen;
 import com.example.gocode.skype.R;
+import com.example.gocode.skype.activities.PreScreen;
 import com.example.gocode.skype.adapters.DisplayAdapter;
 
-import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -53,7 +49,7 @@ public class DisplayGallery extends Fragment {
         ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.gallery_display, container, false);
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.displayRecyclerView);
         DisplayAdapter adapter = new DisplayAdapter(getActivity().getApplicationContext(), data);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL,false));
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
         recyclerView.setAdapter(adapter);
         return rootView;
     }
