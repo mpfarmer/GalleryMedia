@@ -38,6 +38,8 @@ public class MediaGallery extends Fragment {
 
     public static final String TAG = "MediaGallery";
     private static final int PERMISSION_REQUEST_READ_EXTERNAL_STORAGE = 321;
+    private static final String PHOTOS = "Photos";
+    private static final String VIDEOS = "Videos";
 
     private TextView tvPhotoCount;
     private int selectedPhotoCount = 0;
@@ -146,13 +148,16 @@ public class MediaGallery extends Fragment {
         protected void onPostExecute(ArrayList<DataModel> dataSet) {
             super.onPostExecute(dataSet);
             if (dataSet != null) {
-                photoList.clear();
+                if (photoList != null) {
+                    photoList.clear();
+                }
                 photoList.addAll(dataSet);
                 photoAdapter.notifyDataSetChanged();
                 tvPhotoCount.setText(dataSet.size() + " selected");
             }
         }
     }
+
     private class FetchVideoTask extends AsyncTask<Object, Void, ArrayList<DataModel>> {
 
         @Override
@@ -174,11 +179,14 @@ public class MediaGallery extends Fragment {
             cursor.close();
             return videoPaths;
         }
+
         @Override
         protected void onPostExecute(ArrayList<DataModel> dataSet) {
             super.onPostExecute(dataSet);
             if (dataSet != null) {
-                videoList.clear();
+                if (videoList != null) {
+                    videoList.clear();
+                }
                 videoList.addAll(dataSet);
                 videoAdapter.notifyDataSetChanged();
                 tvVideoCount.setText(dataSet.size() + " selected");
@@ -192,8 +200,13 @@ public class MediaGallery extends Fragment {
         Log.d(TAG, MediaGallery.class.getName() + "OnCreate()");
         photoList = new ArrayList<>();
         videoList = new ArrayList<>();
-        photoAdapter = new PhotoAdapter();
-        videoAdapter = new VideoAdapter();
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(TAG, MediaGallery.class.getName() + "OnCreateView()");
+        ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.gallery_media, container, false);
         if (Build.VERSION.SDK_INT >= 23) {
             if (!isPermissionGranted()) {
                 askForPermission();
@@ -202,12 +215,6 @@ public class MediaGallery extends Fragment {
                 new FetchVideoTask().execute();
             }
         }
-    }
-
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.gallery_media, container, false);
         tvPhotoCount = (TextView) rootView.findViewById(R.id.photoCount);
         tvPhotoSelected = (TextView) rootView.findViewById(R.id.photoSelectedCount);
         tvVideoCount = (TextView) rootView.findViewById(R.id.videoCount);
@@ -218,10 +225,12 @@ public class MediaGallery extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        photoAdapter = new PhotoAdapter();
         photoRecyclerView = (RecyclerView) view.findViewById(R.id.recyclerViewPhoto);
         photoLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.HORIZONTAL, false);
         photoRecyclerView.setLayoutManager(photoLayoutManager);
         photoRecyclerView.setAdapter(photoAdapter);
+        videoAdapter = new VideoAdapter();
         videoRecyclerView = (RecyclerView) view.findViewById(R.id.recyclerViewVideo);
         videoLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.HORIZONTAL, false);
         videoRecyclerView.setLayoutManager(videoLayoutManager);
