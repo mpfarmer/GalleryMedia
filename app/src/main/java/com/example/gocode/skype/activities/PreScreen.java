@@ -25,7 +25,7 @@ public class PreScreen extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.screen_pre);
-        Log.d(TAG, PreScreen.class.getName() + "OnDestroy");
+        Log.d(TAG, PreScreen.class.getName() + "OnDestroy()");
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.btnSelectStart);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -75,6 +75,6 @@ public class PreScreen extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, PreScreen.class.getName() + "OnDestroy");
+        Log.d(TAG, PreScreen.class.getName() + "OnDestroy()");
     }
 }
